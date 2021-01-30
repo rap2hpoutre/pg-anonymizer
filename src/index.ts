@@ -2,7 +2,7 @@ import { Command, flags } from "@oclif/command";
 import { promisify } from "util";
 import { exec } from "child_process";
 const faker = require("faker");
-const fs = require('fs');
+const fs = require("fs");
 // import faker from 'faker';
 
 function dieAndLog(message: string, error: any) {
@@ -37,6 +37,10 @@ class PgAnonymizer extends Command {
       description: "output file",
       default: "output.sql",
     }),
+    fakerLocale: flags.string({
+      char: "f",
+      description: "faker locale (e.g: en, fr, de)",
+    }),
     pgDumpOutputMemory: flags.string({
       char: "m",
       description: "max memory used to get output from pg_dump in MB",
@@ -63,10 +67,22 @@ class PgAnonymizer extends Command {
 
   async run() {
     const { args, flags } = this.parse(PgAnonymizer);
+
+    if (flags.fakerLocale) {
+      faker.locale = flags.fakerLocale;
+    }
+
     const result = await this.originalDump(
       args.database,
       Number(flags.pgDumpOutputMemory)
     );
+
+    const list = flags.list.split(",").map((l) => {
+      return {
+        col: l.replace(/:(?:.*)$/, "").toLowerCase(),
+        faker: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
+      };
+    });
 
     let table = null;
     let indices: Number[] = [];
@@ -74,7 +90,7 @@ class PgAnonymizer extends Command {
 
     console.log("Command pg_dump done, starting anonymization.");
     console.log("Output file: " + flags.output);
-    fs.writeFileSync(flags.output, '')
+    fs.writeFileSync(flags.output, "");
 
     for (let line of result.split("\n")) {
       if (line.match(/^COPY .* FROM stdin;$/)) {
@@ -89,7 +105,7 @@ class PgAnonymizer extends Command {
           .map((e) => e.toLowerCase());
 
         indices = cols.reduce((acc: Number[], value, key) => {
-          if (flags.list.includes(value)) acc.push(key);
+          if (list.find((l) => l.col === value)) acc.push(key);
           return acc;
         }, []);
 
@@ -104,6 +120,11 @@ class PgAnonymizer extends Command {
           .split("\t")
           .map((v, k) => {
             if (indices.includes(k)) {
+              const f = list.find((l) => l.col === cols[k])?.faker;
+              if (f) {
+                const [, two, three] = f.split(".");
+                return faker[two][three]();
+              }
               if (cols[k] === "email") return faker.internet.email();
               if (cols[k] === "name") return faker.name.findName();
               if (cols[k] === "description") return faker.random.words(3);
@@ -124,11 +145,10 @@ class PgAnonymizer extends Command {
         cols = [];
       }
       try {
-        fs.appendFileSync(flags.output, line + '\n');
-      } catch(e) {
-        dieAndLog('Failed to write file', e);
+        fs.appendFileSync(flags.output, line + "\n");
+      } catch (e) {
+        dieAndLog("Failed to write file", e);
       }
-      
     }
   }
 }
