@@ -30,7 +30,7 @@ class PgAnonymizer extends Command {
       char: "l",
       description: "list of columns to anonymize",
       default:
-        "email,name,description,address,city,country,phone,comment,bithdate",
+        "email,name,description,address,city,country,phone,comment,birthdate",
     }),
     output: flags.string({
       char: "o",
