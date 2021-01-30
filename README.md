@@ -29,7 +29,7 @@ npx pg-anonymizer postgres://localhost/mydb \
 Specifying another list via `--list` replace the default automatically anonymized values:
 
 ```
-email,name,description,address,city,country,phone,comment,bithdate
+email,name,description,address,city,country,phone,comment,birthdate
 ```
 
 You can also choose which faker function you want to use to replace data (default is `faker.random.word`):
