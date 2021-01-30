@@ -41,6 +41,12 @@ npx pg-anonymizer postgres://localhost/mydb \
 
 You don't need to specify faker function since the command will try to find correct function via column name.
 
+You can use plain text too for static replacements:
+```bash
+npx pg-anonymizer postgres://localhost/mydb \
+  --list=textcol:hello,jsoncol:{},intcol:12
+```
+
 ### Memory limit
 
 Use `-m` to change `pg_dump` output memory limit (e.g: `512`)

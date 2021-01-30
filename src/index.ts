@@ -3,12 +3,15 @@ import { promisify } from "util";
 import { exec } from "child_process";
 const faker = require("faker");
 const fs = require("fs");
-// import faker from 'faker';
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
   console.error(error);
   process.exit(1);
+}
+
+function postgreSQLDate(date: Date) {
+  return date.toISOString().replace(/T/, " ").replace(/\..+/, "");
 }
 
 class PgAnonymizer extends Command {
@@ -98,10 +101,10 @@ class PgAnonymizer extends Command {
         console.log("Anonymizing table " + table);
 
         cols = line
-          .replace(/^COPY (?:.*?) \((.*)\)/, "$1")
+          .replace(/^COPY (?:.*?) \((.*)\).*$/, "$1")
           .split(",")
           .map((e) => e.trim())
-          .map((e) => e.replace('"', ""))
+          .map((e) => e.replace(/"/g, ""))
           .map((e) => e.toLowerCase());
 
         indices = cols.reduce((acc: Number[], value, key) => {
@@ -122,7 +125,9 @@ class PgAnonymizer extends Command {
             if (indices.includes(k)) {
               const f = list.find((l) => l.col === cols[k])?.faker;
               if (f) {
-                const [, two, three] = f.split(".");
+                const [one, two, three] = f.split(".");
+                if (!(one === "faker" && two && three)) return f;
+                if (two === "date") return postgreSQLDate(faker.date[three]());
                 return faker[two][three]();
               }
               if (cols[k] === "email") return faker.internet.email();
@@ -133,8 +138,9 @@ class PgAnonymizer extends Command {
               if (cols[k] === "country") return faker.address.country();
               if (cols[k] === "phone") return faker.phone.phoneNumber();
               if (cols[k] === "comment") return faker.random.words(3);
-              if (cols[k] === "bithdate") return faker.date.past();
-              return faker.random.word;
+              if (cols[k] === "birthdate")
+                return postgreSQLDate(faker.date.past());
+              return faker.random.word();
             }
             return v;
           })
