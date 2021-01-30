@@ -28,9 +28,11 @@ npx pg-anonymizer postgres://localhost/mydb \
 
 Specifying another list via `--list` replace the default automatically anonymized values:
 
-```
+```csv
 email,name,description,address,city,country,phone,comment,birthdate
 ```
+
+#### Customize replacements 
 
 You can also choose which faker function you want to use to replace data (default is `faker.random.word`):
 
@@ -39,7 +41,7 @@ npx pg-anonymizer postgres://localhost/mydb \
   --list=firstName:faker.name.firstName,lastName:faker.name.lastName
 ```
 
-You don't need to specify faker function since the command will try to find correct function via column name.
+:point_right: You don't need to specify faker function since the command will try to find correct function via column name.
 
 You can use plain text too for static replacements:
 ```bash
@@ -59,7 +61,7 @@ Use `-l` to change the locale used by faker (default: `en`)
 
 The anonymized output file is plain SQL text, you can import it with `psql`.
 
-```
+```bash
 psql -d mylocaldb < output.sql
 ```
 
