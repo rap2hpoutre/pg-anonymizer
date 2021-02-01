@@ -70,5 +70,5 @@ psql -d mylocaldb < output.sql
 There are a bunch of competitors, still I failed to use them:
 
  - [`postgresql_anonymizer`](https://postgresql-anonymizer.readthedocs.io/en/stable/) may be [hard to setup](https://postgresql-anonymizer.readthedocs.io/en/stable/INSTALL/#install-on-macos) and may be cumbersome for simple usage. Still, I guess it's the best solution.
- - [`pganonymize`](https://pypi.org/project/pganonymize/) fails when it does not use `public` schema or columns have uppercase caracters
+ - [`pganonymize`](https://pypi.org/project/pganonymize/) fails when it does not use `public` schema or columns have uppercase characters
  - [`pganonymizer`](https://github.com/asgeirrr/pgantomizer) also fails with simple cases. Errors are not explicit and silent.
