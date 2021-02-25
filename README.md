@@ -5,7 +5,7 @@ Export your PostgreSQL database anonymized. Replace all sensitive data thanks to
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/pg-anonymizer.svg)](https://npmjs.org/package/pg-anonymizer)
-[![Downloads/week](https://img.shields.io/npm/dw/pg-anonymizer.svg)](https://npmjs.org/package/pg-anonymizer)
+[![Downloads](https://img.shields.io/npm/dt/pg-anonymizer.svg)](https://npmjs.org/package/pg-anonymizer)
 [![License](https://img.shields.io/npm/l/pg-anonymizer.svg)](https://github.com/rap2hpoutre/pg-anonymizer/blob/master/package.json)
 ## Usage
 
