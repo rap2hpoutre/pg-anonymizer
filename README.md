@@ -49,6 +49,27 @@ npx pg-anonymizer postgres://localhost/mydb \
   --list=textcol:hello,jsoncol:{},intcol:12
 ```
 
+You can even use your custom replacements function from your own javascript module.
+Here is a simple example to mask all the email.
+```bash
+npx pg-anonymizer postgres://localhost/mydb \
+  --extension ./myExtension.js \
+  --list=email:extension.maskEmail
+```
+
+```javascript
+// myExtension.js
+module.exports = {
+  maskEmail: (email) => {
+   const [name, domain] = email.split('@');
+   const { length: len } = name;
+   const maskedName = name[0] + '...' + name[len - 1];
+   const maskedEmail = maskedName + '@' + domain;
+   return maskedEmail;
+  }
+};
+```
+
 ### Memory limit
 
 Use `-m` to change `pg_dump` output memory limit (e.g: `512`)
