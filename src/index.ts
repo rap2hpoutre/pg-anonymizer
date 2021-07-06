@@ -3,7 +3,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 const faker = require("faker");
 const fs = require("fs");
-const path = require('path');
+const path = require("path");
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -80,9 +80,9 @@ class PgAnonymizer extends Command {
       faker.locale = flags.fakerLocale;
     }
 
-    const extension = flags.extension ?
-    require(path.join(process.cwd(), flags.extension)) :
-    null;
+    const extension = flags.extension
+      ? require(path.join(process.cwd(), flags.extension))
+      : null;
 
     const result = await this.originalDump(
       args.database,
@@ -132,7 +132,9 @@ class PgAnonymizer extends Command {
           .split("\t")
           .map((v, k) => {
             if (indices.includes(k)) {
-              const replacement = list.find(l => l.col === cols[k])?.replacement;
+              const replacement = list.find(
+                (l) => l.col === cols[k]
+              )?.replacement;
               if (replacement) {
                 if (replacement.startsWith("faker.")) {
                   const [_one, two, three] = replacement.split(".");
