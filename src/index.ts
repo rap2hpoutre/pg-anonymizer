@@ -3,6 +3,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 const faker = require("faker");
 const fs = require("fs");
+const path = require('path');
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -34,6 +35,10 @@ class PgAnonymizer extends Command {
       description: "list of columns to anonymize",
       default:
         "email,name,description,address,city,country,phone,comment,birthdate",
+    }),
+    extension: flags.string({
+      char: "e",
+      description: "the path to your extension module",
     }),
     output: flags.string({
       char: "o",
@@ -75,6 +80,10 @@ class PgAnonymizer extends Command {
       faker.locale = flags.fakerLocale;
     }
 
+    const extension = flags.extension ?
+    require(path.join(process.cwd(), flags.extension)) :
+    null;
+
     const result = await this.originalDump(
       args.database,
       Number(flags.pgDumpOutputMemory)
@@ -83,7 +92,7 @@ class PgAnonymizer extends Command {
     const list = flags.list.split(",").map((l) => {
       return {
         col: l.replace(/:(?:.*)$/, "").toLowerCase(),
-        faker: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
+        replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
       };
     });
 
@@ -123,12 +132,25 @@ class PgAnonymizer extends Command {
           .split("\t")
           .map((v, k) => {
             if (indices.includes(k)) {
-              const f = list.find((l) => l.col === cols[k])?.faker;
-              if (f) {
-                const [one, two, three] = f.split(".");
-                if (!(one === "faker" && two && three)) return f;
-                if (two === "date") return postgreSQLDate(faker.date[three]());
-                return faker[two][three]();
+              const replacement = list.find(l => l.col === cols[k])?.replacement;
+              if (replacement) {
+                if (replacement.startsWith("faker.")) {
+                  const [_one, two, three] = replacement.split(".");
+                  if (!(two && three)) return replacement;
+                  if (two === "date")
+                    return postgreSQLDate(faker.date[three]());
+                  return faker[two][three]();
+                }
+                if (replacement.startsWith("extension.")) {
+                  const functionPath = replacement.split(".");
+                  return functionPath.reduce((acc, key) => {
+                    if (acc[key]) {
+                      return acc[key];
+                    }
+                    return acc;
+                  }, extension)(v);
+                }
+                return replacement;
               }
               if (cols[k] === "email") return faker.internet.email();
               if (cols[k] === "name") return faker.name.findName();
