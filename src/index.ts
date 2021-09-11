@@ -96,7 +96,7 @@ class PgAnonymizer extends Command {
       };
     });
 
-    let table = null;
+    let table: string | null = null;
     let indices: Number[] = [];
     let cols: string[] = [];
 
@@ -150,7 +150,7 @@ class PgAnonymizer extends Command {
                       return acc[key];
                     }
                     return acc;
-                  }, extension)(v);
+                  }, extension)(v, table);
                 }
                 return replacement;
               }
