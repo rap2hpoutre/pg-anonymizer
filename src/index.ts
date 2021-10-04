@@ -1,8 +1,9 @@
 import { Command, flags } from "@oclif/command";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { appendFile, createReadStream, writeFile } from "fs-extra";
+import * as readline from 'readline'
 const faker = require("faker");
-const fs = require("fs");
 const path = require("path");
 
 function dieAndLog(message: string, error: any) {
@@ -49,6 +50,10 @@ class PgAnonymizer extends Command {
       char: "f",
       description: "faker locale (e.g: en, fr, de)",
     }),
+    inputFile: flags.string({
+      char: "i",
+      description: "input file (uses an input file instead of calling pg_dump)",
+    }),
     pgDumpOutputMemory: flags.string({
       char: "m",
       description: "max memory used to get output from pg_dump in MB",
@@ -84,10 +89,15 @@ class PgAnonymizer extends Command {
       ? require(path.join(process.cwd(), flags.extension))
       : null;
 
-    const result = await this.originalDump(
-      args.database,
-      Number(flags.pgDumpOutputMemory)
-    );
+    let result = '';
+    if (!flags.inputFile) {
+      console.log('-i flag is required... OLD VERSION OF LOADING THE WHOLE DB INTO MEMORY IS NO LONGER SUPPORTED!!');
+      process.exit(1);
+      // result = await this.originalDump(
+      //   args.database,
+      //   Number(flags.pgDumpOutputMemory)
+      // );
+    }
 
     const list = flags.list.split(",").map((l) => {
       return {
@@ -100,11 +110,19 @@ class PgAnonymizer extends Command {
     let indices: Number[] = [];
     let cols: string[] = [];
 
-    console.log("Command pg_dump done, starting anonymization.");
+    console.log("Starting anonymization.");
     console.log("Output file: " + flags.output);
-    fs.writeFileSync(flags.output, "");
+    await writeFile(flags.output, "");
 
-    for (let line of result.split("\n")) {
+    const fileStream = createReadStream(flags.inputFile);
+
+    const inputLineResults = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity
+    }) as any as Iterable<String>;
+
+    for await (let line of inputLineResults) {
+      // for (let line of result.split("\n")) {
       if (line.match(/^COPY .* FROM stdin;$/)) {
         table = line.replace(/^COPY (.*?) .*$/, "$1");
         console.log("Anonymizing table " + table);
@@ -121,10 +139,10 @@ class PgAnonymizer extends Command {
           return acc;
         }, []);
 
-        if (indices.length)
+        if (indices.length) 
           console.log(
             "Columns to anonymize: " +
-              cols.filter((v, k) => indices.includes(k)).join(", ")
+            cols.filter((v, k) => indices.includes(k)).join(", ")
           );
         else console.log("No columns to anonymize");
       } else if (table && line.trim()) {
@@ -175,7 +193,7 @@ class PgAnonymizer extends Command {
         cols = [];
       }
       try {
-        fs.appendFileSync(flags.output, line + "\n");
+        await appendFile(flags.output, line + "\n");
       } catch (e) {
         dieAndLog("Failed to write file", e);
       }
