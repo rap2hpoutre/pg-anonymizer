@@ -1,9 +1,9 @@
 import { Command, flags } from "@oclif/command";
-import { promisify } from "util";
-import { exec } from "child_process";
+import { spawn } from "child_process";
 const faker = require("faker");
 const fs = require("fs");
 const path = require("path");
+const readline = require('readline');
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -56,23 +56,6 @@ class PgAnonymizer extends Command {
     }),
   };
 
-  async originalDump(db: string, memory: number): Promise<string> {
-    const execPromisified = promisify(exec);
-    try {
-      console.log("Launching pg_dump");
-      const { stdout, stderr } = await execPromisified(`pg_dump ${db}`, {
-        maxBuffer: memory * 1024 * 1024,
-      });
-      if (stderr.trim()) {
-        dieAndLog("pg_dump command failed.", stderr);
-      }
-      return stdout;
-    } catch (e) {
-      dieAndLog("pg_dump command failed. Are you sure it is installed?", e);
-    }
-    return "";
-  }
-
   async run() {
     const { args, flags } = this.parse(PgAnonymizer);
 
@@ -84,10 +67,17 @@ class PgAnonymizer extends Command {
       ? require(path.join(process.cwd(), flags.extension))
       : null;
 
-    const result = await this.originalDump(
-      args.database,
-      Number(flags.pgDumpOutputMemory)
-    );
+    console.log("Launching pg_dump");
+    const pg = spawn('pg_dump', [args.database]);
+    pg.on('exit', function(code) {
+      if (code != 0) {
+        dieAndLog("pg_dump command failed with exit code", code);
+      }
+    });
+    pg.stderr.on('data', function(data) {
+      dieAndLog("pg_dump command error:", data);
+    });
+    pg.stdout.setEncoding('utf8');
 
     const list = flags.list.split(",").map((l) => {
       return {
@@ -100,11 +90,16 @@ class PgAnonymizer extends Command {
     let indices: Number[] = [];
     let cols: string[] = [];
 
-    console.log("Command pg_dump done, starting anonymization.");
+    console.log("Command pg_dump started, running anonymization.");
     console.log("Output file: " + flags.output);
-    fs.writeFileSync(flags.output, "");
+    let out = fs.createWriteStream(flags.output);
 
-    for (let line of result.split("\n")) {
+    const inputLineResults = readline.createInterface({
+      input: pg.stdout,
+      crlfDelay: Infinity
+    }) as any as Iterable<String>;
+
+    for await (let line of inputLineResults) {
       if (line.match(/^COPY .* FROM stdin;$/)) {
         table = line.replace(/^COPY (.*?) .*$/, "$1");
         console.log("Anonymizing table " + table);
@@ -175,7 +170,7 @@ class PgAnonymizer extends Command {
         cols = [];
       }
       try {
-        fs.appendFileSync(flags.output, line + "\n");
+        out.write(line + "\n");
       } catch (e) {
         dieAndLog("Failed to write file", e);
       }
