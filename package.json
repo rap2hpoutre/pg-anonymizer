@@ -8,21 +8,21 @@
   },
   "bugs": "https://github.com/rap2hpoutre/pg-anonymizer/issues",
   "dependencies": {
-    "@oclif/command": "^1",
-    "@oclif/config": "^1",
-    "@oclif/plugin-help": "^3",
+    "@oclif/command": "^1.8.0",
+    "@oclif/config": "^1.17.0",
+    "@oclif/plugin-help": "3.2.3",
     "@types/faker": "^5.1.6",
     "faker": "^5.2.0",
-    "tslib": "^1"
+    "tslib": "^2.3.1"
   },
   "devDependencies": {
-    "@oclif/dev-cli": "^1",
-    "@types/node": "^10",
-    "eslint": "^5.13",
-    "eslint-config-oclif": "^3.1",
-    "eslint-config-oclif-typescript": "^0.1",
-    "ts-node": "^8",
-    "typescript": "^3.3"
+    "@oclif/dev-cli": "^1.26.0",
+    "@types/node": "^16.10.3",
+    "eslint": "^7.32.0",
+    "eslint-config-oclif": "^4.0.0",
+    "eslint-config-oclif-typescript": "^1.0.2",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.3"
   },
   "engines": {
     "node": ">=8.0.0"
