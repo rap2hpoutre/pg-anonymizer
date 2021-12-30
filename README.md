@@ -32,10 +32,10 @@ Specifying another list via `--list` replace the default automatically anonymize
 email,name,description,address,city,country,phone,comment,birthdate
 ```
 
-You can also specify the table for a column using the slash notation:
+You can also specify the table for a column using the dot notation:
 
 ```csv
-public.user/email,public.product/description
+public.user.email,public.product.description,email,name
 ```
 
 #### Customize replacements 
