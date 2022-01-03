@@ -51,8 +51,8 @@ class PgAnonymizer extends Command {
     }),
     pgDumpOutputMemory: flags.string({
       char: "m",
-      description: "max memory used to get output from pg_dump in MB",
-      default: "256",
+      description: "Obsolete, not needed any more: max memory used to get output from pg_dump in MB",
+      default: "0",
     }),
   };
 
@@ -112,7 +112,8 @@ class PgAnonymizer extends Command {
           .map((e) => e.toLowerCase());
 
         indices = cols.reduce((acc: Number[], value, key) => {
-          if (list.find((l) => l.col === value)) acc.push(key);
+          if (list.find((l) => l.col === value)) acc.push(key)
+          else if (list.find((l) => l.col === table + '.' + value)) acc.push(key);
           return acc;
         }, []);
 
@@ -127,9 +128,14 @@ class PgAnonymizer extends Command {
           .split("\t")
           .map((v, k) => {
             if (indices.includes(k)) {
-              const replacement = list.find(
+              let replacement = list.find(
                 (l) => l.col === cols[k]
               )?.replacement;
+              if (!replacement) {
+                replacement = list.find(
+                  (l) => l.col === table + '.' + cols[k]
+                )?.replacement;
+              }
               if (replacement) {
                 if (replacement.startsWith("faker.")) {
                   const [_one, two, three] = replacement.split(".");

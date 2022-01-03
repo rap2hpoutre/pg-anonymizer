@@ -32,6 +32,12 @@ Specifying another list via `--list` replace the default automatically anonymize
 email,name,description,address,city,country,phone,comment,birthdate
 ```
 
+You can also specify the table for a column using the dot notation:
+
+```csv
+public.user.email,public.product.description,email,name
+```
+
 #### Customize replacements 
 
 You can also choose which faker function you want to use to replace data (default is `faker.random.word`):
@@ -69,10 +75,6 @@ module.exports = {
   }
 };
 ```
-
-### Memory limit
-
-Use `-m` to change `pg_dump` output memory limit (e.g: `512`)
 
 ### Locale (i18n)
 
