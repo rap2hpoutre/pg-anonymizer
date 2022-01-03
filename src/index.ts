@@ -3,7 +3,7 @@ import { spawn } from "child_process";
 const faker = require("faker");
 const fs = require("fs");
 const path = require("path");
-const readline = require('readline');
+const readline = require("readline");
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -70,16 +70,16 @@ class PgAnonymizer extends Command {
       : null;
 
     console.log("Launching pg_dump");
-    const pg = spawn('pg_dump', [args.database]);
-    pg.on('exit', function(code) {
+    const pg = spawn("pg_dump", [args.database]);
+    pg.on("exit", function(code) {
       if (code != 0) {
         dieAndLog("pg_dump command failed with exit code", code);
       }
     });
-    pg.stderr.on('data', function(data) {
+    pg.stderr.on("data", function(data) {
       dieAndLog("pg_dump command error:", data);
     });
-    pg.stdout.setEncoding('utf8');
+    pg.stdout.setEncoding("utf8");
 
     if (!(flags.list || flags.configFile)) {
       flags.list = "email,name,description,address,city,country,phone,comment,birthdate";
@@ -100,7 +100,7 @@ class PgAnonymizer extends Command {
         })
         .filter(Boolean);
     } else if (flags.list) {
-      list = flags.list.split(",").map((l) => {
+      list = flags.list.split(",").map((l: string) => {
         return {
           col: l.replace(/:(?:.*)$/, "").toLowerCase(),
           replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
@@ -135,7 +135,7 @@ class PgAnonymizer extends Command {
 
         indices = cols.reduce((acc: Number[], value, key) => {
           if (list.find((l) => l.col === value)) acc.push(key)
-          else if (list.find((l) => l.col === table + '.' + value)) acc.push(key);
+          else if (list.find((l) => l.col === table + "." + value)) acc.push(key);
           return acc;
         }, []);
 
@@ -155,7 +155,7 @@ class PgAnonymizer extends Command {
               )?.replacement;
               if (!replacement) {
                 replacement = list.find(
-                  (l) => l.col === table + '.' + cols[k]
+                  (l) => l.col === table + "." + cols[k]
                 )?.replacement;
               }
               if (replacement) {
