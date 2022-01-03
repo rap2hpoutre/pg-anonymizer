@@ -4,6 +4,7 @@ const faker = require("faker");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
+import { Input } from "@oclif/parser";
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -27,7 +28,7 @@ class PgAnonymizer extends Command {
     },
   ];
 
-  static flags = {
+  static flags: flags.Input<any> = {
     version: flags.version({ char: "v" }),
     help: flags.help({ char: "h" }),
     list: flags.string({
@@ -53,13 +54,14 @@ class PgAnonymizer extends Command {
     }),
     pgDumpOutputMemory: flags.string({
       char: "m",
-      description: "Obsolete, not needed any more: max memory used to get output from pg_dump in MB",
+      description:
+        "Obsolete, not needed any more: max memory used to get output from pg_dump in MB",
       default: "0",
     }),
   };
 
   async run() {
-    const { args, flags } = this.parse(PgAnonymizer);
+    const { args, flags } = this.parse(<Input<any>>PgAnonymizer);
 
     if (flags.fakerLocale) {
       faker.locale = flags.fakerLocale;
@@ -71,12 +73,12 @@ class PgAnonymizer extends Command {
 
     console.log("Launching pg_dump");
     const pg = spawn("pg_dump", [args.database]);
-    pg.on("exit", function(code) {
+    pg.on("exit", function (code) {
       if (code != 0) {
         dieAndLog("pg_dump command failed with exit code", code);
       }
     });
-    pg.stderr.on("data", function(data) {
+    pg.stderr.on("data", function (data) {
       dieAndLog("pg_dump command error:", data);
     });
     pg.stdout.setEncoding("utf8");
@@ -118,7 +120,7 @@ class PgAnonymizer extends Command {
 
     const inputLineResults = readline.createInterface({
       input: pg.stdout,
-      crlfDelay: Infinity
+      crlfDelay: Infinity,
     }) as any as Iterable<String>;
 
     for await (let line of inputLineResults) {
@@ -134,8 +136,9 @@ class PgAnonymizer extends Command {
           .map((e) => e.toLowerCase());
 
         indices = cols.reduce((acc: Number[], value, key) => {
-          if (list.find((l) => l.col === value)) acc.push(key)
-          else if (list.find((l) => l.col === table + "." + value)) acc.push(key);
+          if (list.find((l: any) => l.col === value)) acc.push(key);
+          else if (list.find((l: any) => l.col === table + "." + value))
+            acc.push(key);
           return acc;
         }, []);
 
@@ -151,11 +154,11 @@ class PgAnonymizer extends Command {
           .map((v, k) => {
             if (indices.includes(k)) {
               let replacement = list.find(
-                (l) => l.col === cols[k]
+                (l: any) => l.col === cols[k]
               )?.replacement;
               if (!replacement) {
                 replacement = list.find(
-                  (l) => l.col === table + "." + cols[k]
+                  (l: any) => l.col === table + "." + cols[k]
                 )?.replacement;
               }
               if (replacement) {
@@ -168,7 +171,7 @@ class PgAnonymizer extends Command {
                 }
                 if (replacement.startsWith("extension.")) {
                   const functionPath = replacement.split(".");
-                  return functionPath.reduce((acc, key) => {
+                  return functionPath.reduce((acc: any, key: any) => {
                     if (acc[key]) {
                       return acc[key];
                     }
