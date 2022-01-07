@@ -38,6 +38,13 @@ You can also specify the table for a column using the dot notation:
 public.user.email,public.product.description,email,name
 ```
 
+Alternatively use `--configFile` option to specify a file with a list of column names and optional replacements, one per line:
+
+```bash
+npx pg-anonymizer postgres://localhost/mydb \
+  --configFile /path/to/file
+```
+
 #### Customize replacements 
 
 You can also choose which faker function you want to use to replace data (default is `faker.random.word`):

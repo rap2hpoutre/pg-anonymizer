@@ -33,9 +33,11 @@ class PgAnonymizer extends Command {
     help: flags.help({ char: "h" }),
     list: flags.string({
       char: "l",
-      description: "list of columns to anonymize",
-      default:
-        "email,name,description,address,city,country,phone,comment,birthdate",
+      description: "[default: email,name,description,address,city,country,phone,comment,birthdate] list of columns to anonymize",
+    }),
+    configFile: flags.string({
+      char: "c",
+      description: "config file with list of columns to anonymize",
     }),
     extension: flags.string({
       char: "e",
@@ -81,12 +83,32 @@ class PgAnonymizer extends Command {
     });
     pg.stdout.setEncoding("utf8");
 
-    const list = flags.list.split(",").map((l: string) => {
-      return {
-        col: l.replace(/:(?:.*)$/, "").toLowerCase(),
-        replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
-      };
-    });
+    if (!(flags.list || flags.configFile)) {
+      flags.list = "email,name,description,address,city,country,phone,comment,birthdate";
+    }
+
+    let list: { col: string; replacement: string | null; }[];
+    if (flags.configFile) {
+      list = fs.readFileSync(flags.configFile, "utf8")
+        .split(/\r?\n/)
+        .map((l: string) => l.trim())
+        .map((l: string) => {
+          if (l === "") return null;
+          if (l.startsWith("#")) return null;
+          return {
+            col: l.replace(/:(?:.*)$/, "").toLowerCase(),
+            replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null
+          };
+        })
+        .filter(Boolean);
+    } else if (flags.list) {
+      list = flags.list.split(",").map((l: string) => {
+        return {
+          col: l.replace(/:(?:.*)$/, "").toLowerCase(),
+          replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
+        };
+      });
+    }
 
     let table: string | null = null;
     let indices: Number[] = [];
@@ -126,7 +148,7 @@ class PgAnonymizer extends Command {
               cols.filter((v, k) => indices.includes(k)).join(", ")
           );
         else console.log("No columns to anonymize");
-      } else if (table && line.trim()) {
+      } else if (table && line.trim() && (line !== "\\.")) {
         line = line
           .split("\t")
           .map((v, k) => {
