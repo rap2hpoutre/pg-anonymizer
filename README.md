@@ -17,6 +17,12 @@ npx pg-anonymizer postgres://user:secret@localhost:1234/mydb -o dump.sql
 
 ☝️ This command requires `pg_dump`. It may already be installed as soon as PostgreSQL is installed.
 
+Output can also be stdout ('-') so you can pipe the output to zip, gz, or to psql:
+
+```bash
+npx pg-anonymizer postgres://user:secret@localhost:1234/mydb -o - | psql DATABASE_URL
+```
+
 ### Specify list of columns to anonymize
 
 Use `--list` option with a comma separated list of column name:
