@@ -56,7 +56,6 @@ class PgAnonymizer extends Command {
       char: "m",
       description:
         "Obsolete, not needed any more: max memory used to get output from pg_dump in MB",
-      default: "0",
     }),
   };
 
@@ -71,7 +70,7 @@ class PgAnonymizer extends Command {
       ? require(path.join(process.cwd(), flags.extension))
       : null;
 
-    console.log("Launching pg_dump");
+    console.error("Launching pg_dump");
     const pg = spawn("pg_dump", [args.database]);
     pg.on("exit", function (code) {
       if (code != 0) {
@@ -114,9 +113,16 @@ class PgAnonymizer extends Command {
     let indices: Number[] = [];
     let cols: string[] = [];
 
-    console.log("Command pg_dump started, running anonymization.");
-    console.log("Output file: " + flags.output);
-    let out = fs.createWriteStream(flags.output);
+    console.error("Command pg_dump started, running anonymization.");
+
+    let out: any;
+    if (flags.output === "-") {
+      out = process.stdout;
+      console.error("Output to stdout");
+    } else {
+      out = fs.createWriteStream(flags.output);
+      console.error("Output file: " + flags.output);
+    }
 
     const inputLineResults = readline.createInterface({
       input: pg.stdout,
@@ -126,7 +132,7 @@ class PgAnonymizer extends Command {
     for await (let line of inputLineResults) {
       if (line.match(/^COPY .* FROM stdin;$/)) {
         table = line.replace(/^COPY (.*?) .*$/, "$1");
-        console.log("Anonymizing table " + table);
+        console.error("Anonymizing table " + table);
 
         cols = line
           .replace(/^COPY (?:.*?) \((.*)\).*$/, "$1")
@@ -143,11 +149,11 @@ class PgAnonymizer extends Command {
         }, []);
 
         if (indices.length)
-          console.log(
+          console.error(
             "Columns to anonymize: " +
               cols.filter((v, k) => indices.includes(k)).join(", ")
           );
-        else console.log("No columns to anonymize");
+        else console.error("No columns to anonymize");
       } else if (table && line.trim() && (line !== "\\.")) {
         line = line
           .split("\t")
