@@ -131,7 +131,9 @@ class PgAnonymizer extends Command {
 
     for await (let line of inputLineResults) {
       if (line.match(/^COPY .* FROM stdin;$/)) {
-        table = line.replace(/^COPY (.*?) .*$/, "$1");
+        table = line
+          .replace(/^COPY (.*?) .*$/, "$1")
+          .replace(/"/g, "");
         console.error("Anonymizing table " + table);
 
         cols = line
