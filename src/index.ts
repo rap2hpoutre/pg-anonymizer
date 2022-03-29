@@ -16,15 +16,40 @@ function postgreSQLDate(date: Date) {
   return date.toISOString().replace(/T/, " ").replace(/\..+/, "");
 }
 
+// These arguments, if passed through to pg_dump, will break pg-anonymizer.
+const pgDumpArgsBlacklist = ["-f", "--file", "-F", "--format", "-V", "--version", "-?", "--help"];
+
+function sanitizePgDumpArgs(argv: string[]) {
+  const isBlacklist = (arg: string) => {
+    for (const blacklistArg of pgDumpArgsBlacklist) {
+      if ((blacklistArg.startsWith("--") && arg.startsWith(blacklistArg)) || arg === blacklistArg) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const invalidArgs = argv.filter(isBlacklist);
+  if (invalidArgs && invalidArgs.length) {
+    console.error("Illegal arguments to pg_dump: " + invalidArgs.join(", "));
+    process.exit(1);
+  }
+}
+
 class PgAnonymizer extends Command {
   static description = "dump anonymized database";
 
+  static strict = false;
+
+  static usage = "[OPTIONS] [--] [PGARG]...";
+
+  // Named args aren't actually used; this exists for documentation purposes
   static args = [
     {
-      name: "database",
+      name: "PGARG",
       description:
-        "database connection string, e.g: `postgresql://user:secret@localhost:1234/mybase`",
-      required: true,
+        "arguments to pass through to pg_dump, e.g. connection string (`postgresql://user:secret@localhost:1234/mybase`) or options (`--data-only`, `-n myschema`)",
+      required: false,
     },
   ];
 
@@ -60,7 +85,7 @@ class PgAnonymizer extends Command {
   };
 
   async run() {
-    const { args, flags } = this.parse(<Input<any>>PgAnonymizer);
+    const { argv, flags } = this.parse(<Input<any>>PgAnonymizer);
 
     if (flags.fakerLocale) {
       faker.locale = flags.fakerLocale;
@@ -70,15 +95,16 @@ class PgAnonymizer extends Command {
       ? require(path.join(process.cwd(), flags.extension))
       : null;
 
+    sanitizePgDumpArgs(argv);
     console.error("Launching pg_dump");
-    const pg = spawn("pg_dump", [args.database]);
+    const pg = spawn("pg_dump", argv);
     pg.on("exit", function (code) {
       if (code != 0) {
         dieAndLog("pg_dump command failed with exit code", code);
       }
     });
     pg.stderr.on("data", function (data) {
-      dieAndLog("pg_dump command error:", data);
+      dieAndLog("pg_dump command error:", data.toString());
     });
     pg.stdout.setEncoding("utf8");
 
