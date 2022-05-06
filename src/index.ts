@@ -118,6 +118,7 @@ class PgAnonymizer extends Command {
     let out: any;
     if (flags.output === "-") {
       out = process.stdout;
+      out._handle.setBlocking(true);
       console.error("Output to stdout");
     } else {
       out = fs.createWriteStream(flags.output);
