@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.5.0...v0.5.1) (2022-05-06)
+
+
+### Bug Fixes
+
+* **stdout:** wait for output to be processed instead of buffering ([#29](https://github.com/rap2hpoutre/pg-anonymizer/issues/29)) ([1146187](https://github.com/rap2hpoutre/pg-anonymizer/commit/11461870674b65be83f2a9b6ba07b9162c2c19b1))
+
 # [0.5.0](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.4.0...v0.5.0) (2022-03-13)
 
 
