@@ -1,6 +1,6 @@
 import { Command, flags } from "@oclif/command";
 import { spawn } from "child_process";
-const faker = require("faker");
+import faker from "@faker-js/faker";
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
@@ -33,7 +33,8 @@ class PgAnonymizer extends Command {
     help: flags.help({ char: "h" }),
     list: flags.string({
       char: "l",
-      description: "[default: email,name,description,address,city,country,phone,comment,birthdate] list of columns to anonymize",
+      description:
+        "[default: email,name,description,address,city,country,phone,comment,birthdate,website] list of columns to anonymize",
     }),
     configFile: flags.string({
       char: "c",
@@ -83,12 +84,14 @@ class PgAnonymizer extends Command {
     pg.stdout.setEncoding("utf8");
 
     if (!(flags.list || flags.configFile)) {
-      flags.list = "email,name,description,address,city,country,phone,comment,birthdate";
+      flags.list =
+        "email,name,description,address,city,country,phone,comment,birthdate";
     }
 
-    let list: { col: string; replacement: string | null; }[];
+    let list: { col: string; replacement: string | null }[];
     if (flags.configFile) {
-      list = fs.readFileSync(flags.configFile, "utf8")
+      list = fs
+        .readFileSync(flags.configFile, "utf8")
         .split(/\r?\n/)
         .map((l: string) => l.trim())
         .map((l: string) => {
@@ -96,7 +99,7 @@ class PgAnonymizer extends Command {
           if (l.startsWith("#")) return null;
           return {
             col: l.replace(/:(?:.*)$/, "").toLowerCase(),
-            replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null
+            replacement: l.includes(":") ? l.replace(/^(?:.*):/, "") : null,
           };
         })
         .filter(Boolean);
@@ -155,7 +158,7 @@ class PgAnonymizer extends Command {
               cols.filter((v, k) => indices.includes(k)).join(", ")
           );
         else console.error("No columns to anonymize");
-      } else if (table && line.trim() && (line !== "\\.")) {
+      } else if (table && line.trim() && line !== "\\.") {
         line = line
           .split("\t")
           .map((v, k) => {
@@ -173,8 +176,8 @@ class PgAnonymizer extends Command {
                   const [_one, two, three] = replacement.split(".");
                   if (!(two && three)) return replacement;
                   if (two === "date")
-                    return postgreSQLDate(faker.date[three]());
-                  return faker[two][three]();
+                    return postgreSQLDate((faker.date as any)[three]());
+                  return (faker as any)[two][three]();
                 }
                 if (replacement.startsWith("extension.")) {
                   const functionPath = replacement.split(".");
@@ -194,6 +197,8 @@ class PgAnonymizer extends Command {
               if (cols[k] === "city") return faker.address.city();
               if (cols[k] === "country") return faker.address.country();
               if (cols[k] === "phone") return faker.phone.phoneNumber();
+              if (cols[k] === "website" || cols[k] === "url")
+                return faker.internet.url();
               if (cols[k] === "comment") return faker.random.words(3);
               if (cols[k] === "birthdate")
                 return postgreSQLDate(faker.date.past());
