@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.5.1...v0.6.0) (2022-07-08)
+
+
+### Features
+
+* allow for passthrough of extra args to pg_dump ([#26](https://github.com/rap2hpoutre/pg-anonymizer/issues/26)) ([776b5be](https://github.com/rap2hpoutre/pg-anonymizer/commit/776b5be4efa8196b26d77b479329eb04033bc384))
+
 ## [0.5.1](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.5.0...v0.5.1) (2022-05-06)
 
 
