@@ -1,6 +1,6 @@
 import { Command, flags } from "@oclif/command";
 import { spawn } from "child_process";
-const faker = require("faker");
+const faker = require('@faker-js/faker');;
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
