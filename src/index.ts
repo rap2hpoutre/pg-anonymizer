@@ -1,6 +1,6 @@
 import { Command, flags } from "@oclif/command";
 import { spawn } from "child_process";
-const faker = require("faker");
+const faker = require("@faker-js/faker");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
@@ -181,7 +181,8 @@ class PgAnonymizer extends Command {
               cols.filter((v, k) => indices.includes(k)).join(", ")
           );
         else console.error("No columns to anonymize");
-      } else if (table && line.trim() && (line !== "\\.")) {
+      }
+      else if (table && line.trim() && (line !== "\\.")) {
         line = line
           .split("\t")
           .map((v, k) => {

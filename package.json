@@ -12,7 +12,7 @@
     "@oclif/config": "^1.18.2",
     "@oclif/plugin-help": "^5.1.10",
     "@types/faker": "^5.5.9",
-    "faker": "^5.2.0",
+    "@faker-js/faker": "^6.2.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
