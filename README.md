@@ -89,6 +89,22 @@ module.exports = {
 };
 ```
 
+### Skip tables
+
+Use `--skip` to skip anonymizing entire tables
+
+```bash
+npx pg-anonymizer postgres://localhost/mydb --skip public.posts
+```
+
+### Ignore `NULL` values
+
+Use `--preserve-null|-n` to skip anonymization on fields with `NULL` values.
+
+```bash
+npx pg-anonymizer postgres://localhost/mydb --preserve-null
+```
+
 ### Locale (i18n)
 
 Use `-l` to change the locale used by faker (default: `en`)
