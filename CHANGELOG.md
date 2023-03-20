@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.6.0...v0.7.0) (2023-03-20)
+
+
+### Features
+
+* add --skip and --preserve-null support, with chalk for logging ([ecc6818](https://github.com/rap2hpoutre/pg-anonymizer/commit/ecc6818a96a0bcaa4e5142a82735835fdae0a5ab))
+
 # [0.6.0](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.5.1...v0.6.0) (2022-07-08)
 
 
