@@ -1,8 +1,6 @@
 import { Args, Command, Flags } from "@oclif/core";
 import { CLIError } from "@oclif/errors";
 import { spawn } from "node:child_process";
-import fs from "fs-extra";
-import path from "node:path";
 import readline from "node:readline";
 import faker from "faker";
 import chalk from "chalk";
@@ -10,7 +8,9 @@ import pluralize from "pluralize";
 
 import { sanitizePgDumpArgs } from "../utils/sanitize-pg-dump-args";
 import { Logger } from "../utils/logger";
-import { postgresSqlDate } from "../utils/postgres-sql-date";
+import { Config, parseColumns, parseConfig, parseOutput, printConfig } from "../utils/parse-config";
+import { parseTransformer } from "../utils/parse-transformer";
+import { parseLine, parseTable, Table } from "../utils/parse-line";
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -102,93 +102,37 @@ export default class PgAnonymizer extends Command {
       faker.locale = flags["faker-locale"];
     }
 
-    let transformer: any | null = null;
+    const config: Config = await parseConfig(flags.config);
+
+    if (flags.columns) {
+      config.columns = parseColumns(flags.columns.split(","));
+    }
 
     if (flags.transformer) {
-      const p = path.join(process.cwd(), flags.transformer);
-
-      logger.info(`Transformer: ${p}`);
-
-      if (!fs.existsSync(p)) {
-        throw new CLIError(`Unable to find transformer module at ${p}`);
-      }
-
-      // eslint-disable-next-line unicorn/prefer-module
-      transformer = require(p);
+      config.transformer = await parseTransformer(flags.transformer);
     }
-
-    const useRowTransformer = transformer && typeof transformer.row === "function";
-
-    let columns: { col: string; replacement: string | null }[] = [];
-
-    if (flags.config) {
-      if (!fs.existsSync(flags.config)) {
-        throw new CLIError(`No configuration file found at "${flags.config}"`);
-      }
-
-      columns = fs
-        .readFileSync(flags.config, "utf8")
-        .split(/\r?\n/)
-        .map(line => line.trim())
-        .map(line => {
-          if (line === "" || line.startsWith("#")) {
-            return null as never; // casting to never, as they're filtered out below
-          }
-
-          return {
-            col: line.replace(/:.*$/, "").toLowerCase(),
-            replacement: line.includes(":") ? line.replace(/^.*:/, "") : null,
-          };
-        })
-        .filter(Boolean);
-    } else {
-      columns = flags.columns.split(",").map((l: string) => {
-        return {
-          col: l.replace(/:.*$/, "").toLowerCase(),
-          replacement: l.includes(":") ? l.replace(/^.*:/, "") : null,
-        };
-      });
-    }
-
-    logger.info("Columns:", columns.map(c => {
-      if (c.replacement) {
-        return `${c.col} [${c.replacement}]`;
-      }
-
-      return c.col;
-    }).join(", "));
-
-    const skip = [];
 
     if (flags.skip) {
-      const tables = flags.skip
-        .split(",")
-        .map(t => t.toLowerCase().trim());
-
-      skip.push(...tables);
-
-      logger.info("Skipping:", tables.join(", "));
+      config.skip = flags.skip.split(",").map(t => t.toLowerCase().trim());
     }
 
-    let table: string | null = null;
-    let cols: { name: string; transform: boolean; replacement?: string | null; }[] = [];
+    if (flags.output) {
+      config.output = parseOutput(flags.output);
+    }
 
-    let out: any;
+    if (flags["preserve-null"]) {
+      config.preserveNull = flags["preserve-null"];
+    }
 
     if (flags["faker-locale"]) {
       logger.info(`Faker Locale: ${flags["faker-locale"]}`);
     }
 
-    if (flags.output === "-") {
-      out = process.stdout;
-      out._handle.setBlocking(true);
-
-      logger.info("Output to stdout");
-    } else {
-      out = fs.createWriteStream(flags.output);
-
-      logger.info("Output file: " + flags.output);
+    if (!config.output) {
+      throw new CLIError("No output configuration provided");
     }
+
+    printConfig(config);
 
     sanitizePgDumpArgs(argv as string[]);
 
@@ -216,137 +160,42 @@ export default class PgAnonymizer extends Command {
       crlfDelay: Number.POSITIVE_INFINITY,
     }) as any as Iterable<string>;
 
-    for await (let line of inputLineResults) {
+    let table: Table | null = null;
+
+    function process(line: string): void | string {
       if (/^COPY .* FROM stdin;$/.test(line)) {
         logger.log("");
 
-        table = line.replace(/^COPY (.*?) .*$/, "$1").replace(/"/g, "");
+        table = parseTable(line, config);
 
-        cols = line
-          .replace(/^COPY .*? \((.*)\).*$/, "$1")
-          .split(",")
-          .map(name => name.trim())
-          .map(name => name.replace(/"/g, ""))
-          .map(name => name.toLowerCase())
-          .map(name => {
-            const transform = columns.find(c => c.col === name || c.col === `${table}.${name}`);
-
-            return {
-              name,
-              transform: Boolean(transform),
-              replacement: transform?.replacement,
-            };
-          });
-
-        const print = cols
-          .map(col => (col.transform ? chalk.yellow(`[${col.name}]`) : col.name))
-          .join(", ");
-
-        logger.log(chalk`{blueBright ${table}}: ${print}`);
-
-        if (skip.includes(table.toLowerCase())) {
+        if (config.skip.includes(table.name.toLowerCase())) {
           logger.log("Skipping... excluded by user");
-        } else if (cols.every(c => !c.transform)) {
+          return;
+        }
+
+        if (!table.transform) {
           logger.log("Skipping... no matching columns");
-        } else {
-          const { length } = cols.filter(c => c.transform);
-          logger.log(`Anonymizing ${chalk.yellow(length)} ${pluralize("column", length)}...`);
+          return;
         }
-      } else if (table && line.trim() && line !== "\\.") {
-        // Skip if specified, or there's no columns to anonymize
-        if (!skip.includes(table.toLowerCase()) && cols.some(c => c.transform)) {
-          const values = line.split("\t");
 
-          let overrides: any | undefined;
+        const { length } = table.columns.filter(c => c.transform);
 
-          if (useRowTransformer) {
-            const entries = values.map((value, index) => [cols[index].name, value]);
-
-            const data = Object.fromEntries(entries);
-
-            overrides = transformer!.tables?.[table]?.(data);
-          }
-
-          line = values.map((value, index) => {
-            const column = cols[index];
-
-            if (!column) {
-              return value;
-            }
-
-            const { name, replacement, transform } = column;
-
-            if (overrides?.[name]) {
-              return overrides[name];
-            }
-
-            if (!transform) {
-              return value;
-            }
-
-            if (flags["preserve-null"] && value === "\\N") {
-              return value;
-            }
-
-            if (!replacement) {
-              switch (name) {
-              case "email": return faker.internet.email();
-              case "name": return faker.name.findName();
-              case "firstName": return faker.name.firstName();
-              case "lastName": return faker.name.lastName();
-              case "address": return faker.address.streetAddress();
-              case "city": return faker.address.city();
-              case "country": return faker.address.country();
-              case "phone": return faker.phone.phoneNumber();
-              case "comment": return faker.random.words(3);
-              case "birthdate": return postgresSqlDate(faker.date.past());
-              default: return faker.random.word();
-              }
-            }
-
-            const [type, method] = replacement.split(/\.(.*)/s);
-
-            if (type === "faker") {
-              const [two, three] = method.split(".") as [keyof Faker.FakerStatic,  string  ];
-
-              if (!two || !three) {
-                throw new CLIError(`No faker function found for ${replacement}`);
-              }
-
-              const fn = (faker[two] as any)?.[three];
-
-              if (typeof fn !== "function") {
-                throw new CLIError(`${replacement} is not a function`);
-              }
-
-              const v = fn();
-
-              if (two === "date") {
-                return postgresSqlDate(v);
-              }
-
-              return v;
-            }
-
-            if ((type === "transformer" || type === "extension") && transformer) {
-              const fn = transformer[method];
-
-              if (typeof fn === "function") {
-                return fn(value, table);
-              }
-            }
-
-            return replacement;
-          })
-            .join("\t");
-        }
-      } else {
-        table = null;
-        cols = [];
+        logger.log(`Anonymizing ${chalk.yellow(length)} ${pluralize("column", length)}...`);
+        return;
       }
 
+      if (table && table.transform && line.trim() && line !== "\\.") {
+        return parseLine(line, table, config);
+      }
+
+      table = null;
+    }
+
+    for await (const line of inputLineResults) {
+      const result = process(line) ?? line;
+
       try {
-        out.write(line + "\n");
+        config.output.stream.write(result + "\n");
       } catch (error) {
         dieAndLog("Failed to write file", error);
       }

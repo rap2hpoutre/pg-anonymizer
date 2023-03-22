@@ -9,6 +9,6 @@
     "object-curly-spacing": ["error", "always"],
     "complexity": "off",
     "max-depth": "off",
-    "indent": ["error", 2]
+    "indent": ["error", 2, { "SwitchCase": 1 }]
   }
 }
