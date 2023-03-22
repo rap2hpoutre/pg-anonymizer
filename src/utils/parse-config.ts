@@ -20,12 +20,13 @@ export interface Config {
   columns: Column[];
   transformer?: Transformer;
   output?: Output;
-  preserveNull?: boolean
+  preserveNull?: boolean,
+  locale?: string;
 }
 
 const logger = new Logger();
 
-export async  function parseConfig(path?: string): Promise<Config> {
+export async function parseConfig(path?: string): Promise<Config> {
   if (!path) {
     return {
       skip: [],
@@ -55,6 +56,7 @@ export async  function parseConfig(path?: string): Promise<Config> {
     transformer,
     skip: contents.skip ?? [],
     output: parseOutput(contents.output),
+    locale: contents.fakerLocale,
   };
 }
 
@@ -124,13 +126,19 @@ export function parseOutput(output: string): Output | undefined {
 }
 
 export function printConfig(config: Config): void {
-  if (config.columns.length > 0) {
-    logger.info("Columns:", config.columns.map(c => c.replacement ? `${c.name} [${c.replacement}]` : c.name).join(", "));
+  const { columns, skip, locale, output } = config;
+
+  if (columns.length > 0) {
+    logger.info("Columns:", columns.map(c => c.replacement ? `${c.name} [${c.replacement}]` : c.name).join(", "));
   }
 
-  if (config.skip.length > 0) {
-    logger.info("Skipping:", config.skip.join(", "));
+  if (skip.length > 0) {
+    logger.info("Skipping:", skip.join(", "));
   }
 
-  logger.info("Output:", config.output?.path ?? config.output?.type);
+  if (locale) {
+    logger.info(`Faker Locale: ${locale}`);
+  }
+
+  logger.info("Output:", output?.path ?? output?.type);
 }

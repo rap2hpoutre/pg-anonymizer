@@ -1,16 +1,16 @@
 import { Args, Command, Flags } from "@oclif/core";
 import { CLIError } from "@oclif/errors";
-import { spawn } from "node:child_process";
+import { BooleanFlag, OptionFlag } from "@oclif/core/lib/interfaces/parser";
 import readline from "node:readline";
 import faker from "faker";
 import chalk from "chalk";
 import pluralize from "pluralize";
 
-import { sanitizePgDumpArgs } from "../utils/sanitize-pg-dump-args";
+import { runPgDump, sanitizePgDumpArgs } from "../utils/pg-dump";
 import { Logger } from "../utils/logger";
-import { Config, parseColumns, parseConfig, parseOutput, printConfig } from "../utils/parse-config";
-import { parseTransformer } from "../utils/parse-transformer";
+import { Config, printConfig } from "../utils/parse-config";
 import { parseLine, parseTable, Table } from "../utils/parse-line";
+import { parseFlags } from "../utils/parse-flags";
 
 function dieAndLog(message: string, error: any) {
   console.error(message);
@@ -98,34 +98,10 @@ export default class PgAnonymizer extends Command {
       console.trace({ args, flags, argv });
     }
 
-    if (flags["faker-locale"]) {
-      faker.locale = flags["faker-locale"];
-    }
+    const config: Config = await parseFlags(flags);
 
-    const config: Config = await parseConfig(flags.config);
-
-    if (flags.columns) {
-      config.columns = parseColumns(flags.columns.split(","));
-    }
-
-    if (flags.transformer) {
-      config.transformer = await parseTransformer(flags.transformer);
-    }
-
-    if (flags.skip) {
-      config.skip = flags.skip.split(",").map(t => t.toLowerCase().trim());
-    }
-
-    if (flags.output) {
-      config.output = parseOutput(flags.output);
-    }
-
-    if (flags["preserve-null"]) {
-      config.preserveNull = flags["preserve-null"];
-    }
-
-    if (flags["faker-locale"]) {
-      logger.info(`Faker Locale: ${flags["faker-locale"]}`);
+    if (config.locale) {
+      faker.locale = config.locale;
     }
 
     if (!config.output) {
@@ -139,19 +115,7 @@ export default class PgAnonymizer extends Command {
     logger.log("");
     logger.log("Launching pg_dump...");
 
-    const pg = spawn("pg_dump", argv as string[]);
-
-    pg.on("exit", function (code) {
-      if (code !== 0) {
-        throw new CLIError(`pg_dump command failed with exit code ${code}`, { exit: code ?? undefined });
-      }
-    });
-
-    pg.stderr.on("data", function (data) {
-      throw new CLIError(`pg_dump command error: ${data.toString()}`);
-    });
-
-    pg.stdout.setEncoding("utf8");
+    const pg = runPgDump(argv as string[]);
 
     logger.log("Command pg_dump started, running anonymization.");
 
@@ -202,3 +166,11 @@ export default class PgAnonymizer extends Command {
     }
   }
 }
+
+export type ParseFlags<F> = {
+  [P in keyof F]:
+  F[P] extends BooleanFlag<infer T> ? T :
+    F[P] extends OptionFlag<infer T> ? T : never;
+};
+
+export type FlagOutput = ParseFlags<typeof PgAnonymizer.flags>
