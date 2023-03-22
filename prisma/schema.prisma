@@ -16,5 +16,17 @@ model User {
   password String
   empty    String?
 
+  posts Post[]
+
   @@map("user")
+}
+
+model Post {
+  id    Int    @id
+  title String
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  @@map("post")
 }
