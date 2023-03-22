@@ -336,7 +336,7 @@ export default class PgAnonymizer extends Command {
               }
             }
 
-            return value;
+            return replacement;
           })
             .join("\t");
         }

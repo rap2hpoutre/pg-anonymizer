@@ -33,6 +33,12 @@ describe("flags", () => {
     t.command(args({ columns: ["password:faker.not.a.function"] }))
       .catch("faker.not.a.function is not a function")
       .it("verifies faker replacement methods");
+
+    t.command(args({ columns: ["password:some-password"] }))
+      .it("should support plain text replacements", ctx => {
+        expect(ctx.stdout).to.contain("Columns: password [some-password]");
+        expect(ctx.stdout).to.match(user(1, "Bob", "some-password"));
+      });
   });
 
   describe("skip", () => {
