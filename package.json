@@ -77,7 +77,7 @@
     "test": "mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
     "db:setup": "yarn db:migrate && yarn db:seed"
   },
   "engines": {

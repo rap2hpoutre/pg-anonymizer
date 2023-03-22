@@ -22,6 +22,7 @@ export interface Config {
   output?: Output;
   preserveNull?: boolean,
   locale?: string;
+  keys: string[]
 }
 
 const logger = new Logger();
@@ -32,6 +33,7 @@ export async function parseConfig(path?: string): Promise<Config> {
       skip: [],
       columns: [],
       output: { type: "unknown" } as Output,
+      keys: [],
     };
   }
 
@@ -57,6 +59,7 @@ export async function parseConfig(path?: string): Promise<Config> {
     skip: contents.skip ?? [],
     output: parseOutput(contents.output),
     locale: contents.fakerLocale,
+    keys: Object.keys(contents),
   };
 }
 
@@ -81,6 +84,10 @@ async function loadConfig(path: string): Promise<any> {
 }
 
 export function parseColumns(columns: string[] | Record<string, string>): Column[] {
+  if (!columns) {
+    return [];
+  }
+
   if (Array.isArray(columns)) {
     return columns.map(column => parseColumn(column)).filter(Boolean) as Column[];
   }

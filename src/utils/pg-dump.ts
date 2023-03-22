@@ -1,7 +1,5 @@
-import { spawn } from "node:child_process";
+import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { CLIError } from "@oclif/errors";
-import { Logger } from "./logger";
-import { ChildProcessWithoutNullStreams } from "node:child_process";
 
 export function runPgDump(argv: string []): ChildProcessWithoutNullStreams {
   const pg = spawn("pg_dump", argv);

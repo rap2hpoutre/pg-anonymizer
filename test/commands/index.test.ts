@@ -87,13 +87,13 @@ describe("flags", () => {
     const t = test.stdout();
 
     t.command([...args(), "--", "--schema-only"])
-      .it("should support passing flags to pg_dump", ctx => {
+      .it("should support passing flags to pg_dump - schema", ctx => {
         expect(ctx.stdout).to.contain("ALTER");
         expect(ctx.stdout).not.to.contain("COPY");
       });
 
     t.command([...args(), "--", "--data-only"])
-      .it("should support passing flags to pg_dump", ctx => {
+      .it("should support passing flags to pg_dump - data", ctx => {
         expect(ctx.stdout).to.contain("COPY");
         expect(ctx.stdout).not.to.contain("ALTER");
       });

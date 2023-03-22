@@ -92,13 +92,13 @@ export default class PgAnonymizer extends Command {
   }
 
   async run(): Promise<void> {
-    const { argv, flags, args } = await this.parse(PgAnonymizer);
+    const { argv, flags, args, metadata, raw } = await this.parse(PgAnonymizer);
 
     if (flags.verbose) {
-      console.trace({ args, flags, argv });
+      console.log({ args, flags, argv, metadata, raw }, metadata);
     }
 
-    const config: Config = await parseFlags(flags);
+    const config: Config = await parseFlags(flags, metadata);
 
     if (config.locale) {
       faker.locale = config.locale;

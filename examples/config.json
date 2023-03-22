@@ -1,8 +1,7 @@
 {
   "columns": {
     "name": "faker.datatype.number",
-    "password": "default",
+    "password": "",
     "public.user.password": "faker.random.alpha"
-  },
-  "transformer": "./transformer.js"
+  }
 }
