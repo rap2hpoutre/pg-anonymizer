@@ -37,8 +37,8 @@ export async function parseConfig(path?: string): Promise<Config> {
     };
   }
 
-  console.log("Loading configuration...");
-  console.log("");
+  logger.log("Loading configuration...");
+  logger.log("");
 
   if (!fs.existsSync(path)) {
     throw new CLIError(`No configuration file found at "${path}"`);

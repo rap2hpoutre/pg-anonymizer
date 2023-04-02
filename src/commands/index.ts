@@ -85,6 +85,9 @@ export default class PgAnonymizer extends Command {
         "Obsolete, not needed any more: max memory used to get output from pg_dump in MB",
       deprecated: true,
     }),
+    silent: Flags.boolean({
+      description: "disable logging for a clean output",
+    }),
     verbose: Flags.boolean({
       char: "v",
       description: "output extra logging",
@@ -94,8 +97,16 @@ export default class PgAnonymizer extends Command {
   async run(): Promise<void> {
     const { argv, flags, args, metadata, raw } = await this.parse(PgAnonymizer);
 
+    if (flags.silent) {
+      process.env.LOGGING_LEVEL = "none";
+    }
+
+    if (flags.output === "-") {
+      process.env.LOG_AS_COMMENTS = "true";
+    }
+
     if (flags.verbose) {
-      console.log({ args, flags, argv, metadata, raw }, metadata);
+      logger.log({ args, flags, argv, metadata, raw }, metadata);
     }
 
     const config: Config = await parseFlags(flags, metadata);
@@ -126,7 +137,7 @@ export default class PgAnonymizer extends Command {
 
     let table: Table | null = null;
 
-    function process(line: string): void | string {
+    function processLine(line: string): void | string {
       if (/^COPY .* FROM stdin;$/.test(line)) {
         logger.log("");
 
@@ -156,7 +167,7 @@ export default class PgAnonymizer extends Command {
     }
 
     for await (const line of inputLineResults) {
-      const result = process(line) ?? line;
+      const result = processLine(line) ?? line;
 
       try {
         config.output.stream.write(result + "\n");

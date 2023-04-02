@@ -83,6 +83,24 @@ describe("flags", () => {
       });
   });
 
+  describe("silent", () => {
+    const t = test.stdout();
+
+    t.command(args({ silent: true }))
+      .it("should not output logs to the console", ctx => {
+        expect(ctx.stdout).not.to.contain("Columns:");
+      });
+  });
+
+  describe("output", () => {
+    const t = test.stdout();
+
+    t.command(args({ output: "-", columns: ["id"] }))
+      .it("should log to comments when outputting to stdout", ctx => {
+        expect(ctx.stdout).to.contain("-- Columns: id");
+      });
+  });
+
   describe("PGARGS", () => {
     const t = test.stdout();
 
