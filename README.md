@@ -23,16 +23,20 @@ Output can also be stdout ('-') so you can pipe the output to zip, gz, or to psq
 npx pg-anonymizer postgres://user:secret@localhost:1234/mydb -o - | psql DATABASE_URL
 ```
 
-### Specify list of columns to anonymize
+## API
 
-Use `--list` option with a comma separated list of column name:
+### `--columns | -c`
+
+#### Specify list of columns to anonymize
+
+Use `--columns` option with a comma separated list of column name:
 
 ```bash
 npx pg-anonymizer postgres://localhost/mydb \
-  --list=email,firstName,lastName,phone
+  --columns=email,firstName,lastName,phone
 ```
 
-Specifying another list via `--list` replace the default automatically anonymized values:
+Specifying another list via `--columns` replace the default automatically anonymized values:
 
 ```csv
 email,name,description,address,city,country,phone,comment,birthdate
@@ -44,20 +48,13 @@ You can also specify the table for a column using the dot notation:
 public.user.email,public.product.description,email,name
 ```
 
-Alternatively use `--configFile` option to specify a file with a list of column names and optional replacements, one per line:
-
-```bash
-npx pg-anonymizer postgres://localhost/mydb \
-  --configFile /path/to/file
-```
-
 #### Customize replacements 
 
 You can also choose which faker function you want to use to replace data (default is `faker.random.word`):
 
 ```bash
 npx pg-anonymizer postgres://localhost/mydb \
-  --list=firstName:faker.name.firstName,lastName:faker.name.lastName
+  --columns=firstName:faker.name.firstName,lastName:faker.name.lastName
 ```
 
 :point_right: You don't need to specify faker function since the command will try to find correct function via column name.
@@ -65,17 +62,14 @@ npx pg-anonymizer postgres://localhost/mydb \
 You can use plain text too for static replacements:
 ```bash
 npx pg-anonymizer postgres://localhost/mydb \
-  --list=textcol:hello,jsoncol:{},intcol:12
+  --columns=textcol:hello,jsoncol:{},intcol:12
 ```
 
-You can even use your custom replacements function from your own javascript module.
-Here is a simple example to mask all the email.
-```bash
-npx pg-anonymizer postgres://localhost/mydb \
-  --extension ./myExtension.js \
-  --list=email:extension.maskEmail
-```
+### `--extension`
 
+#### Use an extension file to create your own custom replacements
+
+Create an extension file, written in javascript
 ```javascript
 // myExtension.js
 module.exports = {
@@ -89,7 +83,35 @@ module.exports = {
 };
 ```
 
-### Skip tables
+Pass the path to `--extension` and use the module exports in `--columns`
+```bash
+npx pg-anonymizer postgres://localhost/mydb \
+  --extension ./myExtension.js \
+  --columns=email:extension.maskEmail
+```
+
+### `--config | -f`
+
+#### Use a configuration file
+
+You can use the `--config` option to specify a file with a list of column names and optional replacements, one per line:
+
+Create a configuration file:
+```csv
+name
+email
+password:faker.random.word
+```
+
+Pass the path to the file into `--config`
+```bash
+npx pg-anonymizer postgres://localhost/mydb \
+  --config /path/to/file
+```
+
+### `--skip`
+
+#### Skip tables
 
 Use `--skip` to skip anonymizing entire tables
 
@@ -97,19 +119,24 @@ Use `--skip` to skip anonymizing entire tables
 npx pg-anonymizer postgres://localhost/mydb --skip public.posts
 ```
 
-### Ignore `NULL` values
+### `--preserve-null | -n`
 
-Use `--preserve-null|-n` to skip anonymization on fields with `NULL` values.
+#### Preserve `NULL` values
+
+Use `--preserve-null` to skip anonymization on fields with `NULL` values.
 
 ```bash
 npx pg-anonymizer postgres://localhost/mydb --preserve-null
 ```
 
-### Locale (i18n)
+### `--faker-locale`
 
-Use `-l` to change the locale used by faker (default: `en`)
+#### Set fakers locale (i18n)
 
-### Import the anonymized file
+Use `--faker-locale` to change the locale used by faker (default: `en`)
+
+
+## Import the anonymized file
 
 The anonymized output file is plain SQL text, you can import it with `psql`.
 

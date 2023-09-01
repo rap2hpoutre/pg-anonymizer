@@ -1,0 +1,7 @@
+{
+  "columns": {
+    "name": "faker.datatype.number",
+    "password": "",
+    "public.user.password": "faker.random.alpha"
+  }
+}

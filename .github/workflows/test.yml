@@ -1,0 +1,54 @@
+name: Testing
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  testing:
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    name: Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "lts/*"
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Print pg_dump version
+        run: |
+          pg_dump --version
+
+      - name: Test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+        run: |
+          npx prisma generate
+          yarn db:setup
+          yarn test

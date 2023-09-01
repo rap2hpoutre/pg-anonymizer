@@ -8,3 +8,5 @@
 node_modules
 output.sql
 .idea
+oclif.manifest.json
+.eslintcache

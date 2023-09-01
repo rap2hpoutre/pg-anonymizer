@@ -7,51 +7,87 @@
     "pg-anonymizer": "./bin/run"
   },
   "bugs": "https://github.com/rap2hpoutre/pg-anonymizer/issues",
-  "dependencies": {
-    "@oclif/command": "^1.8.16",
-    "@oclif/config": "^1.18.2",
-    "@oclif/plugin-help": "^5.1.10",
-    "@types/faker": "^5.5.9",
-    "chalk": "^4",
-    "faker": "^5.2.0",
-    "pluralize": "^8.0.0",
-    "tslib": "^2.3.1"
-  },
-  "devDependencies": {
-    "@oclif/dev-cli": "^1.26.10",
-    "@semantic-release/changelog": "^6.0.1",
-    "@semantic-release/git": "^10.0.1",
-    "@types/node": "^18.15.3",
-    "@types/pluralize": "^0.0.29",
-    "eslint": "^8.6.0",
-    "eslint-config-oclif": "^4.0.0",
-    "eslint-config-oclif-typescript": "^1.0.2",
-    "semantic-release": "^19.0.2",
-    "ts-node": "^10.4.0",
-    "typescript": "4.4.4"
-  },
-  "engines": {
-    "node": ">=8.0.0"
-  },
+  "homepage": "https://github.com/rap2hpoutre/pg-anonymizer",
+  "repository": "rap2hpoutre/pg-anonymizer",
+  "license": "MIT",
+  "main": "dist/index.js",
   "files": [
     "/bin",
-    "/lib"
+    "/dist",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/rap2hpoutre/pg-anonymizer",
+  "dependencies": {
+    "@oclif/core": "^2",
+    "@oclif/errors": "^1.3.6",
+    "@oclif/plugin-help": "^5",
+    "@oclif/plugin-plugins": "^2.4.2",
+    "chalk": "^4",
+    "faker": "^5.2.0",
+    "fs-extra": "^11.1.1",
+    "pluralize": "^8.0.0"
+  },
+  "devDependencies": {
+    "@oclif/test": "^2.3.10",
+    "@prisma/client": "4.11.0",
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@types/chai": "^4",
+    "@types/faker": "^5.5.9",
+    "@types/fs-extra": "^11.0.1",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^18.15.3",
+    "@types/pluralize": "^0.0.29",
+    "chai": "^4",
+    "dotenv": "^16.0.3",
+    "eslint": "^7.32.0",
+    "eslint-config-oclif": "^4",
+    "eslint-config-oclif-typescript": "^1.0.3",
+    "mocha": "^9",
+    "oclif": "^3",
+    "prisma": "^4.11.0",
+    "semantic-release": "^19.0.2",
+    "shx": "^0.3.3",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.5"
+  },
+  "oclif": {
+    "bin": "pg-anonymizer",
+    "dirname": "pg-anonymizer",
+    "default": ".",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "anonymize": {
+        "description": "Export your postgreSQL database anonymized"
+      }
+    }
+  },
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint . --ext .ts --config .eslintrc",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "yarn lint",
+    "prepack": "yarn build && oclif manifest && oclif readme",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:setup": "yarn db:migrate && yarn db:seed"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "keywords": [
     "oclif"
   ],
-  "license": "MIT",
-  "main": "lib/index.js",
-  "oclif": {
-    "bin": "pg-anonymizer"
-  },
-  "repository": "rap2hpoutre/pg-anonymizer",
-  "scripts": {
-    "posttest": "eslint . --ext .ts --config .eslintrc",
-    "prepack": "rm -rf lib && tsc -b && oclif-dev readme",
-    "test": "echo NO TESTS",
-    "version": "oclif-dev readme && git add README.md"
-  },
-  "types": "lib/index.d.ts"
+  "types": "dist/index.d.ts",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
 }

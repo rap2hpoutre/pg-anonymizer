@@ -1,0 +1,5 @@
+prisma
+src
+.env
+env.example
+output.sql
