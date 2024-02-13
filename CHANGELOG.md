@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.8.0...v0.8.1) (2024-02-13)
+
+
+### Bug Fixes
+
+* ts error message ([#56](https://github.com/rap2hpoutre/pg-anonymizer/issues/56)) ([5f51e09](https://github.com/rap2hpoutre/pg-anonymizer/commit/5f51e0919f2f1a67e0b20c7cd04343b6ebd04eaa))
+
 # [0.8.0](https://github.com/rap2hpoutre/pg-anonymizer/compare/v0.7.0...v0.8.0) (2023-09-01)
 
 
